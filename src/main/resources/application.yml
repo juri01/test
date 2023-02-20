@@ -1,0 +1,38 @@
+logging:
+  level:
+    root: info
+
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoint:
+    web:
+      exposure:
+        include: health
+    health:
+      show-details: always
+
+spring:
+  sleuth:
+    reactor:
+      instrumentation-type: manual
+
+cpay:
+  daya-eye:
+    index:
+      default-index : ""
+  elasticsearch:
+    firstHost : "localhost"
+    secondHost : "localhost"
+    thirdHost : "localhost"
+#spring.sleuth.reactor.instrumentation-type=MANUAL
+#spring.cloud.loadbalancer.health-check.refetch-instances=false
+#spring.cloud.loadbalancer.health-check.refetch-instances-interval=5s
+#spring.cloud.loacbalancer.helth-check.path.default="_search"
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
