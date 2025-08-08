@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+    id 'war'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = JavaVersion.VERSION_17
+
+def springVersion = '5.1.18.RELEASE'
+def springDocVersion = '1.6.15'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.springframework:spring-webmvc:${springVersion}"
+    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
+
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+
+    testImplementation 'junit:junit:4.13.2'
+}
+
