@@ -2,7 +2,6 @@ package com.example.webfluxelastic.payment.provider;
 
 import com.example.webfluxelastic.payment.dto.*;
 import com.example.webfluxelastic.payment.type.PaymentProviderType;
-import reactor.core.publisher.Mono;
 
 /**
  * 결제 제휴사 공통 인터페이스.
@@ -13,9 +12,9 @@ public sealed interface PaymentProvider
 
     PaymentProviderType getProviderType();
 
-    Mono<PaymentAuthResponse> authenticate(PaymentAuthRequest request);
+    PaymentAuthResponse authenticate(PaymentAuthRequest request);
 
-    Mono<PaymentApproveResponse> approve(PaymentApproveRequest request);
+    PaymentApproveResponse approve(PaymentApproveRequest request);
 
-    Mono<PaymentCancelResponse> cancel(PaymentCancelRequest request);
+    PaymentCancelResponse cancel(PaymentCancelRequest request);
 }

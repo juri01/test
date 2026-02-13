@@ -5,9 +5,9 @@ import com.example.webfluxelastic.payment.type.PaymentProviderType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class KakaoPayProvider extends AbstractPaymentProvider {
 
-    private final WebClient webClient;
+    private final RestTemplate restTemplate;
 
     @Override
     public PaymentProviderType getProviderType() {
@@ -23,52 +23,52 @@ public class KakaoPayProvider extends AbstractPaymentProvider {
     }
 
     @Override
-    protected Mono<PaymentAuthResponse> doAuthenticate(PaymentAuthRequest request) {
+    protected PaymentAuthResponse doAuthenticate(PaymentAuthRequest request) {
         // TODO: 실제 카카오페이 Ready API 호출로 교체
         // POST https://open-api.kakaopay.com/online/v1/payment/ready
-        return webClient.post()
-                .uri("/kakaopay/v1/payment/ready")
-                .bodyValue(buildKakaoAuthBody(request))
-                .retrieve()
-                .bodyToMono(KakaoReadyResponse.class)
-                .map(res -> new PaymentAuthResponse(res.tid(), res.nextRedirectPcUrl()));
+        KakaoReadyResponse res = restTemplate.postForObject(
+                "/kakaopay/v1/payment/ready",
+                buildKakaoAuthBody(request),
+                KakaoReadyResponse.class
+        );
+        return new PaymentAuthResponse(res.tid(), res.nextRedirectPcUrl());
     }
 
     @Override
-    protected Mono<PaymentApproveResponse> doApprove(PaymentApproveRequest request) {
+    protected PaymentApproveResponse doApprove(PaymentApproveRequest request) {
         // TODO: 실제 카카오페이 Approve API 호출로 교체
         // POST https://open-api.kakaopay.com/online/v1/payment/approve
-        return webClient.post()
-                .uri("/kakaopay/v1/payment/approve")
-                .bodyValue(buildKakaoApproveBody(request))
-                .retrieve()
-                .bodyToMono(KakaoApproveResponse.class)
-                .map(res -> new PaymentApproveResponse(
-                        request.transactionId(),
-                        res.partnerOrderId(),
-                        res.amount(),
-                        res.taxFreeAmount(),
-                        res.aid(),
-                        res.approvedAt()
-                ));
+        KakaoApproveResponse res = restTemplate.postForObject(
+                "/kakaopay/v1/payment/approve",
+                buildKakaoApproveBody(request),
+                KakaoApproveResponse.class
+        );
+        return new PaymentApproveResponse(
+                request.transactionId(),
+                res.partnerOrderId(),
+                res.amount(),
+                res.taxFreeAmount(),
+                res.aid(),
+                res.approvedAt()
+        );
     }
 
     @Override
-    protected Mono<PaymentCancelResponse> doCancel(PaymentCancelRequest request) {
+    protected PaymentCancelResponse doCancel(PaymentCancelRequest request) {
         // TODO: 실제 카카오페이 Cancel API 호출로 교체
         // POST https://open-api.kakaopay.com/online/v1/payment/cancel
-        return webClient.post()
-                .uri("/kakaopay/v1/payment/cancel")
-                .bodyValue(buildKakaoCancelBody(request))
-                .retrieve()
-                .bodyToMono(KakaoCancelResponse.class)
-                .map(res -> new PaymentCancelResponse(
-                        request.transactionId(),
-                        res.partnerOrderId(),
-                        res.cancelAmount(),
-                        res.remainAmount(),
-                        res.cancelledAt()
-                ));
+        KakaoCancelResponse res = restTemplate.postForObject(
+                "/kakaopay/v1/payment/cancel",
+                buildKakaoCancelBody(request),
+                KakaoCancelResponse.class
+        );
+        return new PaymentCancelResponse(
+                request.transactionId(),
+                res.partnerOrderId(),
+                res.cancelAmount(),
+                res.remainAmount(),
+                res.cancelledAt()
+        );
     }
 
     // ── 카카오페이 전용 요청 빌더 ────────────────────────────────
@@ -109,10 +109,10 @@ public class KakaoPayProvider extends AbstractPaymentProvider {
     private record KakaoReadyResponse(String tid, String nextRedirectPcUrl) {}
 
     private record KakaoApproveResponse(String aid, String partnerOrderId,
-                                        java.math.BigDecimal amount, java.math.BigDecimal taxFreeAmount,
+                                        BigDecimal amount, BigDecimal taxFreeAmount,
                                         LocalDateTime approvedAt) {}
 
     private record KakaoCancelResponse(String partnerOrderId,
-                                       java.math.BigDecimal cancelAmount, java.math.BigDecimal remainAmount,
+                                       BigDecimal cancelAmount, BigDecimal remainAmount,
                                        LocalDateTime cancelledAt) {}
 }
