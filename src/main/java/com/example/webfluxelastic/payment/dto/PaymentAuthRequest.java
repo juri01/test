@@ -1,5 +1,6 @@
 package com.example.webfluxelastic.payment.dto;
 
+import com.example.webfluxelastic.payment.dto.provider.ProviderAuthParams;
 import com.example.webfluxelastic.payment.type.PaymentProviderType;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ public record PaymentAuthRequest(
         BigDecimal totalAmount,
         BigDecimal taxFreeAmount,
         String returnUrl,
-        String cancelUrl
+        String cancelUrl,
+        ProviderAuthParams providerParams
 ) {
 }

@@ -1,6 +1,10 @@
 package com.example.webfluxelastic.payment.provider;
 
 import com.example.webfluxelastic.payment.dto.*;
+import com.example.webfluxelastic.payment.dto.provider.ProviderApproveParams.NaverApproveParams;
+import com.example.webfluxelastic.payment.dto.provider.ProviderAuthParams.NaverAuthParams;
+import com.example.webfluxelastic.payment.dto.provider.ProviderCancelParams.NaverCancelParams;
+import com.example.webfluxelastic.payment.exception.PaymentException;
 import com.example.webfluxelastic.payment.type.PaymentProviderType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +28,13 @@ public class NaverPayProvider extends AbstractPaymentProvider {
 
     @Override
     protected PaymentAuthResponse doAuthenticate(PaymentAuthRequest request) {
-        // TODO: 실제 네이버페이 결제 예약 API 호출로 교체
-        // POST https://dev.apis.naver.com/naverpay-partner/naverpay/payments/v2/reserve
+        if (!(request.providerParams() instanceof NaverAuthParams naverParams)) {
+            throw new PaymentException(getProviderType(), "INVALID_PARAMS", "네이버페이 인증 파라미터가 필요합니다.");
+        }
+
         NaverReserveResponse res = restTemplate.postForObject(
                 "/naverpay/payments/v2/reserve",
-                buildNaverReserveBody(request),
+                buildNaverReserveBody(request, naverParams),
                 NaverReserveResponse.class
         );
         return new PaymentAuthResponse(res.paymentId(), res.redirectUrl());
@@ -36,11 +42,13 @@ public class NaverPayProvider extends AbstractPaymentProvider {
 
     @Override
     protected PaymentApproveResponse doApprove(PaymentApproveRequest request) {
-        // TODO: 실제 네이버페이 결제 승인 API 호출로 교체
-        // POST https://dev.apis.naver.com/naverpay-partner/naverpay/payments/v2/apply/payment
+        if (!(request.providerParams() instanceof NaverApproveParams naverParams)) {
+            throw new PaymentException(getProviderType(), "INVALID_PARAMS", "네이버페이 승인 파라미터가 필요합니다.");
+        }
+
         NaverApproveResponse res = restTemplate.postForObject(
                 "/naverpay/payments/v2/apply/payment",
-                buildNaverApproveBody(request),
+                buildNaverApproveBody(naverParams),
                 NaverApproveResponse.class
         );
         return new PaymentApproveResponse(
@@ -55,11 +63,13 @@ public class NaverPayProvider extends AbstractPaymentProvider {
 
     @Override
     protected PaymentCancelResponse doCancel(PaymentCancelRequest request) {
-        // TODO: 실제 네이버페이 결제 취소 API 호출로 교체
-        // POST https://dev.apis.naver.com/naverpay-partner/naverpay/payments/v2/cancel
+        if (!(request.providerParams() instanceof NaverCancelParams naverParams)) {
+            throw new PaymentException(getProviderType(), "INVALID_PARAMS", "네이버페이 취소 파라미터가 필요합니다.");
+        }
+
         NaverCancelResponse res = restTemplate.postForObject(
                 "/naverpay/payments/v2/cancel",
-                buildNaverCancelBody(request),
+                buildNaverCancelBody(request, naverParams),
                 NaverCancelResponse.class
         );
         return new PaymentCancelResponse(
@@ -73,32 +83,35 @@ public class NaverPayProvider extends AbstractPaymentProvider {
 
     // ── 네이버페이 전용 요청 빌더 ────────────────────────────────
 
-    private NaverReserveBody buildNaverReserveBody(PaymentAuthRequest request) {
+    private NaverReserveBody buildNaverReserveBody(PaymentAuthRequest request, NaverAuthParams params) {
         return new NaverReserveBody(
                 request.orderId(),
+                params.merchantUserKey(),
                 request.orderName(),
+                params.productCategory(),
                 request.totalAmount().intValue(),
                 request.taxFreeAmount().intValue(),
                 request.returnUrl()
         );
     }
 
-    private NaverApproveBody buildNaverApproveBody(PaymentApproveRequest request) {
-        return new NaverApproveBody(request.transactionId());
+    private NaverApproveBody buildNaverApproveBody(NaverApproveParams params) {
+        return new NaverApproveBody(params.paymentId());
     }
 
-    private NaverCancelBody buildNaverCancelBody(PaymentCancelRequest request) {
+    private NaverCancelBody buildNaverCancelBody(PaymentCancelRequest request, NaverCancelParams params) {
         return new NaverCancelBody(
                 request.transactionId(),
                 request.cancelAmount().intValue(),
                 request.cancelTaxFreeAmount().intValue(),
-                request.cancelReason()
+                params.cancelReason()
         );
     }
 
     // ── 네이버페이 전용 내부 DTO ─────────────────────────────────
 
-    private record NaverReserveBody(String merchantPayKey, String productName,
+    private record NaverReserveBody(String merchantPayKey, String merchantUserKey,
+                                    String productName, String productCategory,
                                     int totalPayAmount, int taxFreeAmount,
                                     String returnUrl) {}
 
